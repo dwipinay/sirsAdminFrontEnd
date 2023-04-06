@@ -1,0 +1,12 @@
+{
+  "files": {
+    "main.css": "/sirsadmin/static/css/main.3cf53703.css",
+    "main.js": "/sirsadmin/static/js/main.85f85eca.js",
+    "static/media/sirsImage4.jpeg": "/sirsadmin/static/media/sirsImage4.0552bf004bcb0072e7e4.jpeg",
+    "index.html": "/sirsadmin/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.3cf53703.css",
+    "static/js/main.85f85eca.js"
+  ]
+}
