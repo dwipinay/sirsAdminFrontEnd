@@ -30,6 +30,7 @@ const RL38 = () => {
   const [namakabkota, setKabKota] = useState("");
   const [namakabkotaView, setKabKotaView] = useState("");
   const [statusValidasi, setStatusValidasi] = useState({ value: 3, label: 'Belum divalidasi' })
+  const [statusRecordValidasi, setStatusRecordValidasi] = useState("post")
   const [statusValidasiId, setStatusValidasiId] = useState(3)
   const [optionStatusValidasi, setOptionStatusValidasi] = useState([])
   const [catatan, setCatatan] = useState("")
@@ -38,6 +39,7 @@ const RL38 = () => {
   const [validateAccess, setValidateAccess] = useState(true)
   const [validateVisibility, setValidateVisibility] = useState("none")
   const [kategoriUser, setKategoriUser] = useState(3)
+  const [validasiId, setValidasiId] = useState(null)
 
 
   useEffect(() => {
@@ -123,47 +125,58 @@ const RL38 = () => {
 
 
   const searchRS = async (e) => {
-    try {
-      const responseRS = await axiosJWT.get(
-        "/apisirs/rumahsakit/",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            kabkotaid: e.target.value
+    setButtonStatus(true);
+    setCatatan(" ");
+    setStatusValidasi({
+      value: 3,
+      label: "Belum divalidasi",
+    });
+    // setButtonsearch(true);
+    setOptionsRS([]);
+    if (e.target.value.length > 0) {
+      try {
+        const responseRS = await axiosJWT.get(
+          "/apisirs/rumahsakit?kabkotaid=" + e.target.value,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            // params: {
+            //   kabkotaid: e.target.value
+            // }
           }
-        }
-      );
-      const DetailRS = responseRS.data.data.map((value) => {
-        return value;
-      });
-      const resultsRS = [];
-
-      DetailRS.forEach((value) => {
-        resultsRS.push({
-          key: value.RUMAH_SAKIT,
-          value: value.Propinsi,
+        );
+        const DetailRS = responseRS.data.data.map((value) => {
+          return value;
         });
-      });
-      // // Update the options state
-      setIdKabKota(e.target.value);
-      setOptionsRS([...resultsRS]);
-      setKabKota(e.target.options[e.target.selectedIndex].text);
-    } catch (error) {
-      if (error.response) {
-        console.log(error);
+        const resultsRS = [];
+
+        DetailRS.forEach((value) => {
+          resultsRS.push({
+            key: value.RUMAH_SAKIT,
+            value: value.Propinsi,
+            kelas: value.KLS_RS,
+          });
+        });
+        // // Update the options state
+        setIdKabKota(e.target.value);
+        setOptionsRS([...resultsRS]);
+        // setKabKota(e.target.options[e.target.selectedIndex].text);
+      } catch (error) {
+        if (error.response) {
+          console.log(error);
+        }
       }
-    }
-    changeValidateAccessEmpty()
-    setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
-    setCatatan(' ')
-  };
+      changeValidateAccessEmpty()
+      // setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
+      // setCatatan(' ')
+    };
+  }
 
   const changeHandlerSingle = (event) => {
     setTahun(event.target.value);
     changeValidateAccessEmpty()
-    setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
+    // setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
     setCatatan(' ')
   };
 
@@ -209,101 +222,164 @@ const RL38 = () => {
     e.preventDefault();
     setSpinner(true);
     let date = (tahun + '-01-01');
-
-    // getDataStatusValidasi()
-
-    if (statusValidasiId == 3) {
-      alert('Silahkan pilih status validasi terlebih dahulu')
-      setSpinner(false)
-    } else {
-      if (statusValidasiId == 2 && catatan == "") {
-        alert('Silahkan isi catatan apabila laporan tidak valid')
-        setSpinner(false)
-      } else if (idrs == "") {
-        alert('Silahkan pilih rumah sakit')
-        setSpinner(false)
-      } else {
-        try {
-          const customConfig = {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            params: {
-              rsid: idrs,
-              rlid: 8,
-              tahun: date,
-            },
-          };
-          const results = await axiosJWT.get(
-            "/apisirs/validasi",
-            customConfig
-          )
-
-          if (results.data.data == null) {
-
-          } else {
-            setStatusDataValidasi(results.data.data.id)
+    if (statusRecordValidasi == 'post') {
+      try {
+        const customConfig = {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        };
+        const result = await axiosJWT.post(
+          "/apisirs/validasi",
+          {
+            rsId: idrs,
+            rlId: 8,
+            tahun: date,
+            statusValidasiId: statusValidasiId,
+            catatan: catatan,
+          },
+          customConfig
+        );
+        setStatusRecordValidasi('patch')
+        setSpinner(false);
+        toast("Data Berhasil Disimpan", {
+          position: toast.POSITION.TOP_RIGHT,
+        });
+        setValidasiId(result.data.data.id)
+        setStatusRecordValidasi('patch')
+      } catch (error) {
+        toast(
+          `Data tidak bisa disimpan karena ,${error.response.data.message}`,
+          {
+            position: toast.POSITION.TOP_RIGHT,
           }
-        } catch (error) {
-          console.log(error);
-        }
-
-        if (statusDataValidasi == null) {
-          try {
-            const customConfig = {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              }
-            }
-            const result = await axiosJWT.post('/apisirs/validasi', {
-              rsId: idrs,
-              rlId: 8,
-              tahun: date,
-              statusValidasiId: statusValidasiId,
-              catatan: catatan
-            }, customConfig)
-            // console.log(result.data)
-            setSpinner(false)
-            toast('Data Berhasil Disimpan', {
-              position: toast.POSITION.TOP_RIGHT
-            })
-          } catch (error) {
-            toast(`Data tidak bisa disimpan karena ,${error.response.data.message}`, {
-              position: toast.POSITION.TOP_RIGHT
-            })
-            setSpinner(false)
-          }
-        } else {
-          try {
-            const customConfig = {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              }
-            }
-            await axiosJWT.patch('/apisirs/validasi/' + statusDataValidasi, {
-              statusValidasiId: statusValidasiId,
-              catatan: catatan
-            }, customConfig);
-            setSpinner(false)
-            toast('Data Berhasil Diupdate', {
-              position: toast.POSITION.TOP_RIGHT
-            })
-          } catch (error) {
-            console.log(error)
-            toast('Data Gagal Diupdate', {
-              position: toast.POSITION.TOP_RIGHT
-            })
-            setButtonStatus(false)
-            setSpinner(false)
-          }
-        }
-
-        getDataStatusValidasi()
+        );
+        setSpinner(false);
+      }
+    } else if (statusRecordValidasi == 'patch') {
+      try {
+        const customConfig = {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        };
+        await axiosJWT.patch(
+          "/apisirs/validasi/" + validasiId,
+          {
+            statusValidasiId: statusValidasiId,
+            catatan: catatan,
+          },
+          customConfig
+        );
+        setSpinner(false);
+        toast("data berhasil diubah", {
+          position: toast.POSITION.TOP_RIGHT,
+        });
+      } catch (error) {
+        console.log(error);
+        toast("Data Gagal Diupdate", {
+          position: toast.POSITION.TOP_RIGHT,
+        });
+        setButtonStatus(false);
+        setSpinner(false);
       }
     }
+    // getDataStatusValidasi()
+
+    // if (statusValidasiId == 3) {
+    //   alert('Silahkan pilih status validasi terlebih dahulu')
+    //   setSpinner(false)
+    // } else {
+    //   if (statusValidasiId == 2 && catatan == "") {
+    //     alert('Silahkan isi catatan apabila laporan tidak valid')
+    //     setSpinner(false)
+    //   } else if (idrs == "") {
+    //     alert('Silahkan pilih rumah sakit')
+    //     setSpinner(false)
+    //   } else {
+    //     try {
+    //       const customConfig = {
+    //         headers: {
+    //           "Content-Type": "application/json",
+    //           Authorization: `Bearer ${token}`,
+    //         },
+    //         params: {
+    //           rsid: idrs,
+    //           rlid: 8,
+    //           tahun: date,
+    //         },
+    //       };
+    //       const results = await axiosJWT.get(
+    //         "/apisirs/validasi",
+    //         customConfig
+    //       )
+
+    //       if (results.data.data == null) {
+
+    //       } else {
+    //         setStatusDataValidasi(results.data.data.id)
+    //       }
+    //     } catch (error) {
+    //       console.log(error);
+    //     }
+
+    //     if (statusDataValidasi == null) {
+    //       try {
+    //         const customConfig = {
+    //           headers: {
+    //             'Content-Type': 'application/json',
+    //             'Authorization': `Bearer ${token}`
+    //           }
+    //         }
+    //         const result = await axiosJWT.post('/apisirs/validasi', {
+    //           rsId: idrs,
+    //           rlId: 8,
+    //           tahun: date,
+    //           statusValidasiId: statusValidasiId,
+    //           catatan: catatan
+    //         }, customConfig)
+    //         // console.log(result.data)
+    //         setSpinner(false)
+    //         toast('Data Berhasil Disimpan', {
+    //           position: toast.POSITION.TOP_RIGHT
+    //         })
+    //       } catch (error) {
+    //         toast(`Data tidak bisa disimpan karena ,${error.response.data.message}`, {
+    //           position: toast.POSITION.TOP_RIGHT
+    //         })
+    //         setSpinner(false)
+    //       }
+    //     } else {
+    //       try {
+    //         const customConfig = {
+    //           headers: {
+    //             'Content-Type': 'application/json',
+    //             'Authorization': `Bearer ${token}`
+    //           }
+    //         }
+    //         await axiosJWT.patch('/apisirs/validasi/' + statusDataValidasi, {
+    //           statusValidasiId: statusValidasiId,
+    //           catatan: catatan
+    //         }, customConfig);
+    //         setSpinner(false)
+    //         toast('Data Berhasil Diupdate', {
+    //           position: toast.POSITION.TOP_RIGHT
+    //         })
+    //       } catch (error) {
+    //         console.log(error)
+    //         toast('Data Gagal Diupdate', {
+    //           position: toast.POSITION.TOP_RIGHT
+    //         })
+    //         setButtonStatus(false)
+    //         setSpinner(false)
+    //       }
+    //     }
+
+    //     getDataStatusValidasi()
+    //   }
+    // }
   }
 
   const getDataStatusValidasi = async () => {
@@ -328,11 +404,14 @@ const RL38 = () => {
       )
 
       if (results.data.data == null) {
+        setStatusRecordValidasi('post')
         setButtonStatus(false)
         // setStatusDataValidasi()
         setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
         setCatatan("")
       } else {
+        setStatusRecordValidasi('patch')
+        setValidasiId(results.data.data.id)
         setStatusValidasi({ value: results.data.data.status_validasi.id, label: results.data.data.status_validasi.nama })
         setCatatan(results.data.data.catatan)
         setButtonStatus(false)
@@ -354,6 +433,9 @@ const RL38 = () => {
     e.preventDefault();
     setSpinner(true);
     changeValidateAccess()
+    setKabKota(
+      e.target.kabkota.options[e.target.kabkota.options.selectedIndex].label
+    );
     if (idrs != "") {
       try {
         const customConfig = {
@@ -660,7 +742,7 @@ const RL38 = () => {
                       <td>RL 3.8 </td>
                       <td>{namaRS}</td>
                       <td>{namatahun}</td>
-                      <td>{namakabkotaView}</td>
+                      <td>{namakabkota}</td>
                       <td>{value.groupNama}</td>
                       <td>{value.groupNilai}</td>
                     </tr>

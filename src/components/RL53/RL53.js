@@ -49,6 +49,9 @@ export const RL53 = () => {
     const [namaTahun, setNamaTahun] = useState(new Date().getFullYear() - 1);
     const [namakabkotaView, setKabKotaView] = useState("");
     const [namaBulan, setNamaBulan] = useState('Januari');
+    const [statusRecordValidasi, setStatusRecordValidasi] = useState("post");
+    const [validasiId, setValidasiId] = useState(null)
+    const [Buttonsearch, setButtonsearch] = useState(true);
 
     useEffect(() => {
         refreshToken();
@@ -134,55 +137,69 @@ export const RL53 = () => {
     }
 
     const searchRS = async (e) => {
-        try {
+        setButtonStatus(true);
+        setCatatan(" ");
+        setStatusValidasi({
+          value: 3,
+          label: "Belum divalidasi",
+        });
+        setButtonsearch(true);
+        setOptionsRS([]);
+        if (e.target.value.length > 0) {
+          try {
             const responseRS = await axiosJWT.get(
-                "/apisirs/rumahsakit/",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    params: {
-                        kabkotaid: e.target.value
-                    }
-                }
+              "/apisirs/rumahsakit?kabkotaid=" + e.target.value,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
             );
             const DetailRS = responseRS.data.data.map((value) => {
-                return value;
+              return value;
             });
             const resultsRS = [];
-
+    
             DetailRS.forEach((value) => {
-                resultsRS.push({
-                    key: value.RUMAH_SAKIT,
-                    value: value.Propinsi,
-                });
+              resultsRS.push({
+                key: value.RUMAH_SAKIT,
+                value: value.Propinsi,
+                kelas: value.KLS_RS,
+              });
             });
+    
             // // Update the options state
             setIdKabKota(e.target.value);
             setOptionsRS([...resultsRS]);
-            setKabKota(e.target.options[e.target.selectedIndex].text);
-        } catch (error) {
+            // setKabKota(e.target.options[e.target.selectedIndex].text);
+          } catch (error) {
             if (error.response) {
-                console.log(error);
+              console.log(error);
             }
+          }
         }
-        changeValidateAccessEmpty()
-        setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
-        setCatatan(' ')
-    };
+      };
 
 
-    const changeHandlerSingle = (event) => {
+      const changeHandlerSingle = (event) => {
         const name = event.target.name
         if (name === 'tahun') {
+            setStatusValidasi({
+                value: 3,
+                label: "Belum divalidasi",
+              });
+            setCatatan(" ");
+            setButtonStatus(true);
             setTahun(event.target.value)
         } else if (name === 'bulan') {
+            setStatusValidasi({
+                value: 3,
+                label: "Belum divalidasi",
+              });
+            setCatatan(" ");
+            setButtonStatus(true);
             setBulan(event.target.value)
         }
-
-        changeValidateAccessEmpty()
-        setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
-        setCatatan(' ')
     };
 
     const changeNamaTahun = () => {
@@ -240,7 +257,7 @@ export const RL53 = () => {
     };
 
     const changeValidateAccess = () => {
-        console.log(kategoriUser)
+       // console.log(kategoriUser)
         if (kategoriUser == 2) {
             setValidateAccess(true)
             setValidateVisibility("none")
@@ -248,7 +265,7 @@ export const RL53 = () => {
             setValidateAccess(false)
             setValidateVisibility("block")
         }
-        console.log(kategoriUser)
+       // console.log(kategoriUser)
     }
 
     const Validasi = async (e) => {
@@ -256,8 +273,75 @@ export const RL53 = () => {
         setSpinner(true);
         let date = (tahun + '-' + bulan + '-01')
 
+        if (statusRecordValidasi == 'post') {
+            try {
+              const customConfig = {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              };
+              const result = await axiosJWT.post(
+                "/apisirs/validasi",
+                {
+                  rsId: idrs,
+                  rlId: 24,
+                  tahun: date,
+                  statusValidasiId: statusValidasiId,
+                  catatan: catatan,
+                },
+                customConfig
+              );
+              setStatusRecordValidasi('patch')
+              setSpinner(false);
+              toast("Data Berhasil Disimpan", {
+                position: toast.POSITION.TOP_RIGHT,
+              });
+              setValidasiId(result.data.data.id)
+              setStatusRecordValidasi('patch')
+            } catch (error) {
+              toast(
+                `Data tidak bisa disimpan karena ,${error.response.data.message}`,
+                {
+                  position: toast.POSITION.TOP_RIGHT,
+                }
+              );
+              setSpinner(false);
+            }  
+          } else if (statusRecordValidasi == 'patch') {
+              try {
+              const customConfig = {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              };
+              await axiosJWT.patch(
+                "/apisirs/validasi/" + validasiId,
+                {
+                  statusValidasiId: statusValidasiId,
+                  catatan: catatan,
+                },
+                customConfig
+              );
+              setSpinner(false);
+              toast("data berhasil diubah", {
+                position: toast.POSITION.TOP_RIGHT,
+              });
+            } catch (error) {
+              console.log(error);
+              toast("Data Gagal Diupdate", {
+                position: toast.POSITION.TOP_RIGHT,
+              });
+              setButtonStatus(false);
+              setSpinner(false);
+            }
+          }
+      
+
         // getDataStatusValidasi()
 
+        /*
         if (statusValidasiId == 3) {
             alert('Silahkan pilih status validasi terlebih dahulu')
             setSpinner(false)
@@ -350,6 +434,7 @@ export const RL53 = () => {
                 getDataStatusValidasi()
             }
         }
+        */
     }
 
     const getDataStatusValidasi = async () => {
@@ -364,7 +449,7 @@ export const RL53 = () => {
                 },
                 params: {
                     rsid: idrs,
-                    rlid: 21,
+                    rlid: 24,
                     tahun: date,
                 },
             };
@@ -374,22 +459,26 @@ export const RL53 = () => {
             )
 
             if (results.data.data == null) {
-                setButtonStatus(false)
                 // setStatusDataValidasi()
-                setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
-                setCatatan(' ')
-            } else {
-                setStatusValidasi({ value: results.data.data.status_validasi.id, label: results.data.data.status_validasi.nama })
-                setCatatan(results.data.data.catatan)
-                setButtonStatus(false)
-                setStatusDataValidasi(results.data.data.id)
-                // alert('hi')
+                setStatusRecordValidasi('post')
+                // setStatusValidasi({ value: 3, label: "Belum divalidasi" });
+                // setCatatan(" ");
+              } else {
+                // setValidasiId = results.data.data.id
+                // console.log(setValidasiId)
+                setValidasiId(results.data.data.id)
+                setStatusRecordValidasi('patch')
+                setStatusValidasi({
+                  value: results.data.data.status_validasi.id,
+                  label: results.data.data.status_validasi.nama,
+                });
+                setCatatan(results.data.data.catatan);
+                setStatusDataValidasi(results.data.data.id);
+              }
+            } catch (error) {
+              console.log(error);
             }
-            // console.log(results)
-        } catch (error) {
-            console.log(error);
-        }
-    }
+          };
 
     const changeValidateAccessEmpty = () => {
         setValidateAccess(true)
@@ -447,7 +536,15 @@ export const RL53 = () => {
         let date = (tahun + '-' + bulan + '-01')
         e.preventDefault();
         setSpinner(true);
-        changeValidateAccess()
+      setKabKota(
+        e.target.kabkota.options[e.target.kabkota.options.selectedIndex].label
+      );
+      setButtonStatus(true);
+      setCatatan(" ");
+      setStatusValidasi({
+        value: 3,
+        label: "Belum divalidasi",
+      });
 
         if (idrs != "") {
             try {
@@ -466,7 +563,7 @@ export const RL53 = () => {
                     customConfig
                 );
 
-                console.log(results)
+                console.log(results.data.data)
                 const rlLimaTitikTigaDetails = results.data.data.map((value) => {
                     return value.rl_lima_titik_tiga_details;
                 });
@@ -476,33 +573,47 @@ export const RL53 = () => {
                     element.forEach((value) => {
                         dataRLLimaTitiktTigaDetails.push(value);
                     });
-                });
-                if (!results.data.data.length) {
-                    changeValidateAccessEmpty()
-                }
+                })
+
+                
+                // if (!results.data.data.length) {
+                //     changeValidateAccessEmpty()
+                // }
+
                 setDataRL(dataRLLimaTitiktTigaDetails);
                 setNamaFile("RL53_" + idrs);
                 setSpinner(false);
-                console.log(dataRL)
+               // console.log(dataRL)
                 setNamaRS(results.data.dataRS.RUMAH_SAKIT);
                 // setKabKota(results.)
                 changeNamaBulan()
                 changeNamaTahun()
-                changeNamaKota()
-            } catch (error) {
-                console.log(error);
+                // changeNamaKota()
+                if (kategoriUser === 3 && dataRLLimaTitiktTigaDetails.length > 0) {
+                    setButtonStatus(false);
+                  } else if (
+                    kategoriUser === 3 &&
+                    dataRLLimaTitiktTigaDetails.length === 0
+                  ) {
+                    setButtonStatus(true);
+                  }
+                } catch (error) {
+                    toast("Get Data Error", {
+                      position: toast.POSITION.TOP_RIGHT,
+                    });
+                    console.log(error);
+                  }
+                  getDataStatusValidasi();
+              } else {
+                  toast('Filter tidak boleh kosong', {
+                      position: toast.POSITION.TOP_RIGHT
+                  })
+                  setSpinner(false);
+              }
+              
+            //   setSpinner(false)
+            //   getDataStatusValidasi()
             }
-        } else {
-            toast('Filter tidak boleh kosong', {
-                position: toast.POSITION.TOP_RIGHT
-            })
-            changeValidateAccessEmpty()
-        }
-
-        setSpinner(false)
-        getDataStatusValidasi()
-        changeValidateAccess()
-    }
 
     return (
         <div className="container" style={{ marginTop: "70px" }}>
@@ -514,29 +625,40 @@ export const RL53 = () => {
                             <form onSubmit={Validasi}>
                                 {/* <div className="form-floating" style={{width:"100%", display:"inline-block"}}> */}
                                 <Select
-                                    options={optionStatusValidasi} className="form-control" name="status_validasi_id" id="status_validasi_id"
-                                    onChange={changeHandlerStatusValidasi} value={statusValidasi} isDisabled={validateAccess}
-                                />
+                    options={optionStatusValidasi}
+                    className="form-control"
+                    name="status_validasi_id"
+                    id="status_validasi_id"
+                    onChange={changeHandlerStatusValidasi}
+                    value={statusValidasi}
+                    isDisabled={buttonStatus}
+                  />
                                 {/* <label htmlFor="status_validasi_id">Status Validasi</label> */}
                                 {/* </div> */}
-                                <div className="form-floating" style={{ width: "100%", display: "inline-block" }}>
-                                    <FloatingLabel label="Catatan :">
-                                        <Form.Control
-                                            as="textarea"
-                                            name="catatan"
-                                            placeholder="Leave a comment here"
-                                            id="floatingInputCatatan"
-                                            style={{ height: "100px" }}
-                                            disabled={validateAccess}
-                                            value={catatan}
-                                            onChange={(e) => changeHandlerCatatan(e)}
-                                        />
-                                    </FloatingLabel>
+                                <div className="form-floating" style={{width:"100%", display:"inline-block"}}>
+                            <FloatingLabel label="Catatan :">
+                  <Form.Control
+                    as="textarea"
+                    name="catatan"
+                    placeholder="Leave a comment here"
+                    id="floatingInputCatatan"
+                    style={{ height: "100px" }}
+                    disabled={buttonStatus}
+                    value={catatan}
+                    onChange={(e) => changeHandlerCatatan(e)}
+                  />
+                </FloatingLabel>
 
                                 </div>
                                 <div className="mt-3">
                                     <ToastContainer />
-                                    <button type="submit" disabled={buttonStatus} style={{ display: validateVisibility }} className="btn btn-outline-success"><HiSaveAs size={20} /> Simpan</button>
+                                    <button
+                    type="submit"
+                    disabled={buttonStatus}
+                    className="btn btn-outline-success"
+                    hidden={buttonStatus}
+                  >
+                    <HiSaveAs size={20}/> Simpan</button>
                                 </div>
                             </form>
                         </div>
@@ -685,7 +807,7 @@ export const RL53 = () => {
                                         <td>RL 5.3 </td>
                                         <td>{namaRS}</td>
                                         <td>{namaTahun}</td>
-                                        <td>{namakabkotaView}</td>
+                                        <td>{namakabkota}</td>
                                         <td>{value.kode_icd_10}</td>
                                         <td>{value.deskripsi}</td>
                                         <td>{value.pasien_keluar_hidup_menurut_jeniskelamin_lk}</td>

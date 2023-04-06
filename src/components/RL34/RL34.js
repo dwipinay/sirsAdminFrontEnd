@@ -32,6 +32,7 @@ const RL34 = () => {
     const [namakabkota, setKabKota] = useState("");
     const [namakabkotaView, setKabKotaView] = useState("");
     const [statusValidasi, setStatusValidasi] = useState({ value: 3, label: 'Belum divalidasi' })
+    const [statusRecordValidasi, setStatusRecordValidasi] = useState("post")
     const [statusValidasiId, setStatusValidasiId] = useState(3)
     const [optionStatusValidasi, setOptionStatusValidasi] = useState([])
     const [catatan, setCatatan] = useState(" ")
@@ -40,6 +41,7 @@ const RL34 = () => {
     const [validateAccess, setValidateAccess] = useState(true)
     const [validateVisibility, setValidateVisibility] = useState("none")
     const [kategoriUser, setKategoriUser] = useState(3)
+    const [validasiId, setValidasiId] = useState(null)
 
     useEffect(() => {
         refreshToken();
@@ -210,8 +212,72 @@ const RL34 = () => {
         setSpinner(true);
         let date = (tahun+'-01-01');
 
+        if (statusRecordValidasi == 'post') {
+                try {
+                    const customConfig = {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    };
+                    const result = await axiosJWT.post(
+                    "/apisirs/validasi",
+                    {
+                        rsId: idrs,
+                        rlId: 4,
+                        tahun: date,
+                        statusValidasiId: statusValidasiId,
+                        catatan: catatan,
+                    },
+                    customConfig
+                    );
+                    setStatusRecordValidasi('patch')
+                    setSpinner(false);
+                    toast("Data Berhasil Disimpan", {
+                    position: toast.POSITION.TOP_RIGHT,
+                    });
+                    setValidasiId(result.data.data.id)
+                    setStatusRecordValidasi('patch')
+                } catch (error) {
+                    toast(
+                    `Data tidak bisa disimpan karena ,${error.response.data.message}`,
+                    {
+                        position: toast.POSITION.TOP_RIGHT,
+                    }
+                    );
+                    setSpinner(false);
+                }  
+        } else if (statusRecordValidasi == 'patch') {
+                try {
+                const customConfig = {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                };
+                await axiosJWT.patch(
+                "/apisirs/validasi/" + validasiId,
+                {
+                    statusValidasiId: statusValidasiId,
+                    catatan: catatan,
+                },
+                customConfig
+                );
+                setSpinner(false);
+                toast("data berhasil diubah", {
+                position: toast.POSITION.TOP_RIGHT,
+                });
+            } catch (error) {
+                console.log(error);
+                toast("Data Gagal Diupdate", {
+                position: toast.POSITION.TOP_RIGHT,
+                });
+                setButtonStatus(false);
+                setSpinner(false);
+            }
+        }
         // getDataStatusValidasi()
-
+        /*
         if(statusValidasiId == 3){
             alert('Silahkan pilih status validasi terlebih dahulu')
             setSpinner(false)
@@ -304,6 +370,7 @@ const RL34 = () => {
                 getDataStatusValidasi()
             }
         }
+        */
     }
 
     const getDataStatusValidasi = async () => {
@@ -332,7 +399,10 @@ const RL34 = () => {
                 // setStatusDataValidasi()
                 setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
                 setCatatan(' ')
+                setStatusRecordValidasi('post')
             } else {
+                setValidasiId(results.data.data.id)
+                setStatusRecordValidasi('patch')
                 setStatusValidasi({ value: results.data.data.status_validasi.id, label: results.data.data.status_validasi.nama })
                 setCatatan(results.data.data.catatan)
                 setButtonStatus(false)
@@ -424,9 +494,8 @@ const RL34 = () => {
                         {/* </div> */}
                             <div className="form-floating" style={{width:"100%", display:"inline-block"}}>
                                 {/* <input name="catatan" type="text" className="form-control" id="floatingInputCatatan" disabled={validateAccess}
-                                    placeholder="catatan" value={catatan} onChange={e => changeHandlerCatatan(e)} />
-                                <label htmlFor="floatingInputCatatan">Catatan Tidak Diterima</label> */}
-                                <FloatingLabel label="Catatan :">
+                                    placeholder="catatan" value={catatan} onChange={e => changeHandlerCatatan(e)} /> */}
+                                    <FloatingLabel label="Catatan :">
                                         <Form.Control
                                             as="textarea"
                                             name="catatan"
@@ -438,6 +507,7 @@ const RL34 = () => {
                                             onChange={(e) => changeHandlerCatatan(e)}
                                         />
                                     </FloatingLabel>
+                                {/* <label htmlFor="floatingInputCatatan">Catatan Tidak Diterima</label> */}
                             </div>
                             <div className="mt-3">
                                 <ToastContainer />

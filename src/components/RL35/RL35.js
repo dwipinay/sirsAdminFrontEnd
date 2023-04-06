@@ -32,6 +32,7 @@ const RL35 = () => {
     const [namakabkota, setKabKota] = useState("");
     const [namakabkotaView, setKabKotaView] = useState("");
     const [statusValidasi, setStatusValidasi] = useState({ value: 3, label: 'Belum divalidasi' })
+    const [statusRecordValidasi, setStatusRecordValidasi] = useState("post")
     const [statusValidasiId, setStatusValidasiId] = useState(3)
     const [optionStatusValidasi, setOptionStatusValidasi] = useState([])
     const [catatan, setCatatan] = useState(' ')
@@ -40,6 +41,7 @@ const RL35 = () => {
     const [validateAccess, setValidateAccess] = useState(true)
     const [validateVisibility, setValidateVisibility] = useState("none")
     const [kategoriUser, setKategoriUser] = useState(3)
+    const [validasiId, setValidasiId] = useState(null)
 
     useEffect(() => {
         refreshToken();
@@ -211,8 +213,73 @@ const RL35 = () => {
         setSpinner(true);
         let date = (tahun+'-01-01');
 
-        // getDataStatusValidasi()
+        if (statusRecordValidasi == 'post') {
+            try {
+                const customConfig = {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                };
+                const result = await axiosJWT.post(
+                "/apisirs/validasi",
+                {
+                    rsId: idrs,
+                    rlId: 5,
+                    tahun: date,
+                    statusValidasiId: statusValidasiId,
+                    catatan: catatan,
+                },
+                customConfig
+                );
+                setStatusRecordValidasi('patch')
+                setSpinner(false);
+                toast("Data Berhasil Disimpan", {
+                position: toast.POSITION.TOP_RIGHT,
+                });
+                setValidasiId(result.data.data.id)
+                setStatusRecordValidasi('patch')
+            } catch (error) {
+                toast(
+                `Data tidak bisa disimpan karena ,${error.response.data.message}`,
+                {
+                    position: toast.POSITION.TOP_RIGHT,
+                }
+                );
+                setSpinner(false);
+            }  
+        } else if (statusRecordValidasi == 'patch') {
+            try {
+            const customConfig = {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            };
+            await axiosJWT.patch(
+            "/apisirs/validasi/" + validasiId,
+            {
+                statusValidasiId: statusValidasiId,
+                catatan: catatan,
+            },
+            customConfig
+            );
+            setSpinner(false);
+            toast("data berhasil diubah", {
+            position: toast.POSITION.TOP_RIGHT,
+            });
+        } catch (error) {
+            console.log(error);
+            toast("Data Gagal Diupdate", {
+            position: toast.POSITION.TOP_RIGHT,
+            });
+            setButtonStatus(false);
+            setSpinner(false);
+        }
+        }
 
+        // getDataStatusValidasi()
+        /*
         if(statusValidasiId == 3){
             alert('Silahkan pilih status validasi terlebih dahulu')
             setSpinner(false)
@@ -305,6 +372,7 @@ const RL35 = () => {
                 getDataStatusValidasi()
             }
         }
+        */
     }
 
     const getDataStatusValidasi = async () => {
@@ -333,7 +401,10 @@ const RL35 = () => {
                 // setStatusDataValidasi()
                 setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
                 setCatatan(' ')
+                setStatusRecordValidasi('post')
             } else {
+                setValidasiId(results.data.data.id)
+                setStatusRecordValidasi('patch')
                 setStatusValidasi({ value: results.data.data.status_validasi.id, label: results.data.data.status_validasi.nama })
                 setCatatan(results.data.data.catatan)
                 setButtonStatus(false)
@@ -537,7 +608,7 @@ const RL35 = () => {
                                             value={catatan}
                                             onChange={(e) => changeHandlerCatatan(e)}
                                         />
-                                    </FloatingLabel>
+                                </FloatingLabel>
                             </div>
                             <div className="mt-3">
                                 <ToastContainer />

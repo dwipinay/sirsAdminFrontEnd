@@ -40,11 +40,13 @@ export const RL54 = () => {
     const [catatan, setCatatan] = useState(" ")
     const [buttonStatus, setButtonStatus] = useState(true)
     const [statusDataValidasi, setStatusDataValidasi] = useState()
-    const [validateAccess, setValidateAccess] = useState(true)
-    const [validateVisibility, setValidateVisibility] = useState("none")
+    // const [validateAccess, setValidateAccess] = useState(true)
+    // const [validateVisibility, setValidateVisibility] = useState("none")
     const [kategoriUser, setKategoriUser] = useState(3)
-    const [namakabkotaView, setKabKotaView] = useState("");
+    // const [namakabkotaView, setKabKotaView] = useState("");
     const [Buttonsearch, setButtonsearch] = useState(true);
+    const [statusRecordValidasi, setStatusRecordValidasi] = useState("post")
+    const [validasiId, setValidasiId] = useState(null)
 
 
     useEffect(() => {
@@ -129,33 +131,45 @@ export const RL54 = () => {
     }
 
     const searchRS = async (e) => {
-        try {
-            const responseRS = await axiosJWT.get(
-                "/apisirs/rumahsakit?kabkotaid=" + e.target.value,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            const DetailRS = responseRS.data.data.map((value) => {
-                return value;
-            });
-            const resultsRS = [];
-
-            DetailRS.forEach((value) => {
-                resultsRS.push({
-                    key: value.RUMAH_SAKIT,
-                    value: value.Propinsi,
+        setButtonStatus(true);
+        setCatatan(" ");
+        setStatusValidasi({
+            value: 3,
+            label: "Belum divalidasi",
+        });
+        setButtonsearch(true);
+        setOptionsRS([]);
+        if (e.target.value.length > 0) {
+            try {
+                const responseRS = await axiosJWT.get(
+                    "/apisirs/rumahsakit?kabkotaid=" + e.target.value,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+                const DetailRS = responseRS.data.data.map((value) => {
+                    return value;
                 });
-            });
-            // // Update the options state
-            setIdKabKota(e.target.value);
-            setOptionsRS([...resultsRS]);
-            setKabKota(e.target.options[e.target.selectedIndex].text);
-        } catch (error) {
-            if (error.response) {
-                console.log(error);
+                const resultsRS = [];
+
+                DetailRS.forEach((value) => {
+                    resultsRS.push({
+                        key: value.RUMAH_SAKIT,
+                        value: value.Propinsi,
+                        kelas: value.KLS_RS,
+                    });
+                });
+
+                // // Update the options state
+                setIdKabKota(e.target.value);
+                setOptionsRS([...resultsRS]);
+                // setKabKota(e.target.options[e.target.selectedIndex].text);
+            } catch (error) {
+                if (error.response) {
+                    console.log(error);
+                }
             }
         }
     };
@@ -163,8 +177,20 @@ export const RL54 = () => {
     const changeHandlerSingle = (event) => {
         const name = event.target.name
         if (name === 'tahun') {
+            setStatusValidasi({
+                value: 3,
+                label: "Belum divalidasi",
+            });
+            setCatatan(" ");
+            setButtonStatus(true);
             setTahun(event.target.value)
         } else if (name === 'bulan') {
+            setStatusValidasi({
+                value: 3,
+                label: "Belum divalidasi",
+            });
+            setCatatan(" ");
+            setButtonStatus(true);
             setBulan(event.target.value)
         }
     };
@@ -216,9 +242,9 @@ export const RL54 = () => {
         setButtonsearch(false);
     };
 
-    const changeNamaKota = () => {
-        setKabKotaView(namakabkota)
-    }
+    // const changeNamaKota = () => {
+    //     setKabKotaView(namakabkota)
+    // }
 
     const changeHandlerStatusValidasi = (selectedOption) => {
         setStatusValidasiId(parseInt(selectedOption.value))
@@ -226,17 +252,17 @@ export const RL54 = () => {
         // console.log(statusValidasiId)
     }
 
-    const changeValidateAccess = () => {
-        console.log(kategoriUser)
-        if (kategoriUser === 2) {
-            setValidateAccess(true)
-            setValidateVisibility("none")
-        } else if (kategoriUser === 3) {
-            setValidateAccess(false)
-            setValidateVisibility("block")
-        }
-        console.log(validateAccess)
-    }
+    // const changeValidateAccess = () => {
+    //     console.log(kategoriUser)
+    //     if(kategoriUser === 2) {
+    //         setValidateAccess(true)
+    //         setValidateVisibility("none")
+    //     } else if(kategoriUser === 3) {
+    //         setValidateAccess(false)
+    //         setValidateVisibility("block")
+    //     }
+    //     console.log(validateAccess)
+    // }
 
     const Validasi = async (e) => {
         e.preventDefault();
@@ -245,96 +271,68 @@ export const RL54 = () => {
 
         // getDataStatusValidasi()
 
-        if (statusValidasiId === 3) {
-            alert('Silahkan pilih status validasi terlebih dahulu')
-            setSpinner(false)
-        } else {
-            if (statusValidasiId === 2 && catatan === "") {
-                alert('Silahkan isi catatan apabila laporan tidak valid')
-                setSpinner(false)
-            } else if (idrs === "") {
-                alert('Silahkan pilih rumah sakit')
-                setSpinner(false)
-            } else {
-                try {
-                    const customConfig = {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                        },
-                        params: {
-                            rsid: idrs,
-                            rlid: 25,
-                            tahun: date,
-                        },
-                    };
-                    const results = await axiosJWT.get(
-                        "/apisirs/validasi",
-                        customConfig
-                    )
-
-                    if (results.data.data == null) {
-
-                    } else {
-                        setStatusDataValidasi(results.data.data.id)
+        if (statusRecordValidasi == 'post') {
+            try {
+                const customConfig = {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                };
+                const result = await axiosJWT.post(
+                    "/apisirs/validasi",
+                    {
+                        rsId: idrs,
+                        rlId: 25,
+                        tahun: date,
+                        statusValidasiId: statusValidasiId,
+                        catatan: catatan,
+                    },
+                    customConfig
+                );
+                setStatusRecordValidasi('patch')
+                setSpinner(false);
+                toast("Data Berhasil Disimpan", {
+                    position: toast.POSITION.TOP_RIGHT,
+                });
+                setValidasiId(result.data.data.id)
+                setStatusRecordValidasi('patch')
+            } catch (error) {
+                toast(
+                    `Data tidak bisa disimpan karena ,${error.response.data.message}`,
+                    {
+                        position: toast.POSITION.TOP_RIGHT,
                     }
-                } catch (error) {
-                    console.log(error);
-                }
-
-                if (statusDataValidasi == null) {
-                    try {
-                        const customConfig = {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            }
-                        }
-                        await axiosJWT.post('/apisirs/validasi', {
-                            rsId: idrs,
-                            rlId: 25,
-                            tahun: date,
-                            statusValidasiId: statusValidasiId,
-                            catatan: catatan
-                        }, customConfig)
-                        // console.log(result.data)
-                        setSpinner(false)
-                        toast('Data Berhasil Disimpan', {
-                            position: toast.POSITION.TOP_RIGHT
-                        })
-                    } catch (error) {
-                        toast(`Data tidak bisa disimpan karena ,${error.response.data.message}`, {
-                            position: toast.POSITION.TOP_RIGHT
-                        })
-                        setSpinner(false)
-                    }
-                } else {
-                    try {
-                        const customConfig = {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            }
-                        }
-                        await axiosJWT.patch('/apisirs/validasi/' + statusDataValidasi, {
-                            statusValidasiId: statusValidasiId,
-                            catatan: catatan
-                        }, customConfig);
-                        setSpinner(false)
-                        toast('Data Berhasil Diupdate', {
-                            position: toast.POSITION.TOP_RIGHT
-                        })
-                    } catch (error) {
-                        console.log(error)
-                        toast('Data Gagal Diupdate', {
-                            position: toast.POSITION.TOP_RIGHT
-                        })
-                        setButtonStatus(false)
-                        setSpinner(false)
-                    }
-                }
-
-                getDataStatusValidasi()
+                );
+                setSpinner(false);
+            }
+        } else if (statusRecordValidasi == 'patch') {
+            try {
+                const customConfig = {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                };
+                await axiosJWT.patch(
+                    "/apisirs/validasi/" + validasiId,
+                    {
+                        statusValidasiId: statusValidasiId,
+                        catatan: catatan,
+                    },
+                    customConfig
+                );
+                setSpinner(false);
+                toast("data berhasil diubah", {
+                    position: toast.POSITION.TOP_RIGHT,
+                });
+            } catch (error) {
+                console.log(error);
+                toast("Data Gagal Diupdate", {
+                    position: toast.POSITION.TOP_RIGHT,
+                });
+                setButtonStatus(false);
+                setSpinner(false);
             }
         }
     }
@@ -355,39 +353,48 @@ export const RL54 = () => {
                     tahun: date,
                 },
             };
-            const results = await axiosJWT.get(
-                "/apisirs/validasi",
-                customConfig
-            )
+            const results = await axiosJWT.get("/apisirs/validasi", customConfig);
 
             if (results.data.data == null) {
-                setButtonStatus(false)
                 // setStatusDataValidasi()
-                setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
-                setCatatan(' ')
+                setStatusRecordValidasi('post')
+                // setStatusValidasi({ value: 3, label: "Belum divalidasi" });
+                // setCatatan(" ");
             } else {
-                setStatusValidasi({ value: results.data.data.status_validasi.id, label: results.data.data.status_validasi.nama })
-                setCatatan(results.data.data.catatan)
-                setButtonStatus(false)
-                setStatusDataValidasi(results.data.data.id)
-                // alert('hi')
+                // setValidasiId = results.data.data.id
+                // console.log(setValidasiId)
+                setValidasiId(results.data.data.id)
+                setStatusRecordValidasi('patch')
+                setStatusValidasi({
+                    value: results.data.data.status_validasi.id,
+                    label: results.data.data.status_validasi.nama,
+                });
+                setCatatan(results.data.data.catatan);
+                setStatusDataValidasi(results.data.data.id);
             }
-            // console.log(results)
         } catch (error) {
             console.log(error);
         }
-    }
+    };
 
-    const changeValidateAccessEmpty = () => {
-        setValidateAccess(true)
-        setValidateVisibility("none")
-    }
+    // const changeValidateAccessEmpty = () => {
+    //     setValidateAccess(true)
+    //     setValidateVisibility("none")
+    // }
 
     const Cari = async (e) => {
         let date = (tahun + '-' + bulan + '-01')
         e.preventDefault()
-        setSpinner(true)
-        changeValidateAccess()
+        setSpinner(true);
+        setKabKota(
+            e.target.kabkota.options[e.target.kabkota.options.selectedIndex].label
+        );
+        setButtonStatus(true);
+        setCatatan(" ");
+        setStatusValidasi({
+            value: 3,
+            label: "Belum divalidasi",
+        });
         if (idrs !== "") {
             try {
                 const customConfig = {
@@ -421,9 +428,9 @@ export const RL54 = () => {
                             ? -1
                             : 0
                 );
-                if (!results.data.data.length) {
-                    changeValidateAccessEmpty()
-                }
+                // if(!results.data.data.length){
+                //     changeValidateAccessEmpty()
+                // }
                 setDataRL(sortedProducts)
                 console.log(sortedProducts)
                 setNamaFile("RL54_" + idrs);
@@ -431,20 +438,32 @@ export const RL54 = () => {
                 setNamaRS(results.data.dataRS.RUMAH_SAKIT);
                 changeNamaBulan()
                 changeNamaTahun()
-                changeNamaKota()
+                //   changeNamaKota()
                 // setNamaBulan(event.target.options[event.target.selectedIndex].text)
+                if (kategoriUser === 3 && dataRLLimaTitikEmpatDetails.length > 0) {
+                    setButtonStatus(false);
+                } else if (
+                    kategoriUser === 3 &&
+                    dataRLLimaTitikEmpatDetails.length === 0
+                ) {
+                    setButtonStatus(true);
+                }
             } catch (error) {
+                toast("Get Data Error", {
+                    position: toast.POSITION.TOP_RIGHT,
+                });
                 console.log(error);
             }
+            getDataStatusValidasi();
         } else {
             toast('Filter tidak boleh kosong', {
                 position: toast.POSITION.TOP_RIGHT
             })
-            changeValidateAccessEmpty()
+            setSpinner(false);
         }
 
-        setSpinner(false)
-        getDataStatusValidasi()
+        //   setSpinner(false)
+        //   getDataStatusValidasi()
     }
 
 
@@ -458,8 +477,13 @@ export const RL54 = () => {
                             <form onSubmit={Validasi}>
                                 {/* <div className="form-floating" style={{width:"100%", display:"inline-block"}}> */}
                                 <Select
-                                    options={optionStatusValidasi} className="form-control" name="status_validasi_id" id="status_validasi_id"
-                                    onChange={changeHandlerStatusValidasi} value={statusValidasi} isDisabled={validateAccess}
+                                    options={optionStatusValidasi}
+                                    className="form-control"
+                                    name="status_validasi_id"
+                                    id="status_validasi_id"
+                                    onChange={changeHandlerStatusValidasi}
+                                    value={statusValidasi}
+                                    isDisabled={buttonStatus}
                                 />
                                 {/* <label htmlFor="status_validasi_id">Status Validasi</label> */}
                                 {/* </div> */}
@@ -479,7 +503,13 @@ export const RL54 = () => {
                                 </div>
                                 <div className="mt-3">
                                     <ToastContainer />
-                                    <button type="submit" disabled={buttonStatus} style={{ display: validateVisibility }} className="btn btn-outline-success"><HiSaveAs size={20} /> Simpan</button>
+                                    <button
+                                        type="submit"
+                                        disabled={buttonStatus}
+                                        className="btn btn-outline-success"
+                                        hidden={buttonStatus}
+                                    >
+                                        <HiSaveAs size={20} /> Simpan</button>
                                 </div>
                             </form>
                         </div>
@@ -638,7 +668,7 @@ export const RL54 = () => {
                                         <td>{namaRS}</td>
                                         <td>{namaBulan}</td>
                                         <td>{namaTahun}</td>
-                                        <td>{namakabkotaView}</td>
+                                        <td>{namakabkota}</td>
                                         <td>
                                             <center>{parseInt(value.no_urut.no)}</center>
                                         </td>

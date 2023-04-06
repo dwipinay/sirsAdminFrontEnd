@@ -33,10 +33,7 @@ const RL33 = () => {
   const [namafile, setNamaFile] = useState("");
   const [namaRS, setNamaRS] = useState("");
   const [namakabkota, setKabKota] = useState("");
-  const [statusValidasi, setStatusValidasi] = useState({
-    value: 3,
-    label: "Belum divalidasi",
-  });
+  const [statusValidasi, setStatusValidasi] = useState({value: 3,label: "Belum divalidasi",});
   const [statusValidasiId, setStatusValidasiId] = useState(3);
   const [optionStatusValidasi, setOptionStatusValidasi] = useState([]);
   const [catatan, setCatatan] = useState(" ");
@@ -44,6 +41,8 @@ const RL33 = () => {
   const [statusDataValidasi, setStatusDataValidasi] = useState();
   const [kategoriUser, setKategoriUser] = useState();
   const [Buttonsearch, setButtonsearch] = useState(true);
+  const [statusRecordValidasi, setStatusRecordValidasi] = useState("post")
+  const [validasiId, setValidasiId] = useState(null)
 
   useEffect(() => {
     refreshToken();
@@ -196,105 +195,169 @@ const RL33 = () => {
     setSpinner(true);
     let date = tahun + "-01-01";
 
-    if (statusValidasiId === 3) {
-      alert("Silahkan pilih status validasi terlebih dahulu");
-      setSpinner(false);
-    } else {
-      if (statusValidasiId === 2 && catatan === "") {
-        alert("Silahkan isi catatan apabila laporan tidak valid");
-        setSpinner(false);
-      } else if (idrs === "") {
-        alert("Silahkan pilih rumah sakit");
-        setSpinner(false);
-      } else {
-        try {
+    if (statusRecordValidasi === 'post') {
+      try {
           const customConfig = {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            params: {
-              rsid: idrs,
-              rlId: 3,
-              tahun: date,
-            },
-          };
-          const results = await axiosJWT.get("/apisirs/validasi", customConfig);
-
-          if (results.data.data == null) {
-          } else {
-            setStatusDataValidasi(results.data.data.id);
-          }
-        } catch (error) {
-          console.log(error);
-        }
-
-        if (statusDataValidasi == null) {
-          try {
-            const customConfig = {
               headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
               },
-            };
-            const result = await axiosJWT.post(
+          };
+          const result = await axiosJWT.post(
               "/apisirs/validasi",
               {
-                rsId: idrs,
-                rlId: 3,
-                tahun: date,
-                statusValidasiId: statusValidasiId,
-                catatan: catatan,
+                  rsId: idrs,
+                  rlId: 3,
+                  tahun: date,
+                  statusValidasiId: statusValidasiId,
+                  catatan: catatan,
               },
               customConfig
-            );
-            console.log(result.data)
-            setSpinner(false);
-            toast("Data Berhasil Disimpan", {
+          );
+          setStatusRecordValidasi('patch')
+          setSpinner(false);
+          toast("Data Berhasil Disimpan", {
               position: toast.POSITION.TOP_RIGHT,
-            });
-          } catch (error) {
-            toast(
+          });
+          setValidasiId(result.data.data.id)
+          setStatusRecordValidasi('patch')
+      } catch (error) {
+          toast(
               `Data tidak bisa disimpan karena ,${error.response.data.message}`,
               {
-                position: toast.POSITION.TOP_RIGHT,
+                  position: toast.POSITION.TOP_RIGHT,
               }
-            );
-            setSpinner(false);
-          }
-        } else {
-          try {
-            const customConfig = {
+          );
+          setSpinner(false);
+      }
+  } else if (statusRecordValidasi === 'patch') {
+      try {
+          const customConfig = {
               headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
               },
-            };
-            await axiosJWT.patch(
-              "/apisirs/validasi/" + statusDataValidasi,
+          };
+          await axiosJWT.patch(
+              "/apisirs/validasi/" + validasiId,
               {
-                statusValidasiId: statusValidasiId,
-                catatan: catatan,
+                  statusValidasiId: statusValidasiId,
+                  catatan: catatan,
               },
               customConfig
-            );
-            setSpinner(false);
-            toast("Data Berhasil Diupdate", {
+          );
+          setSpinner(false);
+          toast("data berhasil diubah", {
               position: toast.POSITION.TOP_RIGHT,
-            });
-          } catch (error) {
-            console.log(error);
-            toast("Data Gagal Diupdate", {
+          });
+      } catch (error) {
+          console.log(error);
+          toast("Data Gagal Diupdate", {
               position: toast.POSITION.TOP_RIGHT,
-            });
-            setButtonStatus(false);
-            setSpinner(false);
-          }
-        }
-
-        getDataStatusValidasi();
+          });
+          setButtonStatus(false);
+          setSpinner(false);
       }
-    }
+  }
+    // if (statusValidasiId === 3) {
+    //   alert("Silahkan pilih status validasi terlebih dahulu");
+    //   setSpinner(false);
+    // } else {
+    //   if (statusValidasiId === 2 && catatan === "") {
+    //     alert("Silahkan isi catatan apabila laporan tidak valid");
+    //     setSpinner(false);
+    //   } else if (idrs === "") {
+    //     alert("Silahkan pilih rumah sakit");
+    //     setSpinner(false);
+    //   } else {
+    //     try {
+    //       const customConfig = {
+    //         headers: {
+    //           "Content-Type": "application/json",
+    //           Authorization: `Bearer ${token}`,
+    //         },
+    //         params: {
+    //           rsid: idrs,
+    //           rlId: 3,
+    //           tahun: date,
+    //         },
+    //       };
+    //       const results = await axiosJWT.get("/apisirs/validasi", customConfig);
+
+    //       if (results.data.data == null) {
+    //       } else {
+    //         setStatusDataValidasi(results.data.data.id);
+    //       }
+    //     } catch (error) {
+    //       console.log(error);
+    //     }
+
+    //     if (statusDataValidasi == null) {
+    //       try {
+    //         const customConfig = {
+    //           headers: {
+    //             "Content-Type": "application/json",
+    //             Authorization: `Bearer ${token}`,
+    //           },
+    //         };
+    //         const result = await axiosJWT.post(
+    //           "/apisirs/validasi",
+    //           {
+    //             rsId: idrs,
+    //             rlId: 3,
+    //             tahun: date,
+    //             statusValidasiId: statusValidasiId,
+    //             catatan: catatan,
+    //           },
+    //           customConfig
+    //         );
+    //         console.log(result.data)
+    //         setSpinner(false);
+    //         toast("Data Berhasil Disimpan", {
+    //           position: toast.POSITION.TOP_RIGHT,
+    //         });
+    //       } catch (error) {
+    //         toast(
+    //           `Data tidak bisa disimpan karena ,${error.response.data.message}`,
+    //           {
+    //             position: toast.POSITION.TOP_RIGHT,
+    //           }
+    //         );
+    //         setSpinner(false);
+    //       }
+    //     } else {
+    //       try {
+    //         const customConfig = {
+    //           headers: {
+    //             "Content-Type": "application/json",
+    //             Authorization: `Bearer ${token}`,
+    //           },
+    //         };
+    //         await axiosJWT.patch(
+    //           "/apisirs/validasi/" + statusDataValidasi,
+    //           {
+    //             statusValidasiId: statusValidasiId,
+    //             catatan: catatan,
+    //           },
+    //           customConfig
+    //         );
+    //         setSpinner(false);
+    //         toast("Data Berhasil Diupdate", {
+    //           position: toast.POSITION.TOP_RIGHT,
+    //         });
+    //       } catch (error) {
+    //         console.log(error);
+    //         toast("Data Gagal Diupdate", {
+    //           position: toast.POSITION.TOP_RIGHT,
+    //         });
+    //         setButtonStatus(false);
+    //         setSpinner(false);
+    //       }
+    //     }
+
+    //     getDataStatusValidasi();
+    //   }
+    // }
   };
 
   const getDataStatusValidasi = async () => {
@@ -316,23 +379,22 @@ const RL33 = () => {
       const results = await axiosJWT.get("/apisirs/validasi", customConfig);
 
       if (results.data.data == null) {
-        // if (kategoriUser === 3) {
-        //   setButtonStatus(false);
-        // }
         // setStatusDataValidasi()
-        setStatusValidasi({ value: 3, label: "Belum divalidasi" });
-        setCatatan(" ");
-      } else {
+        setStatusRecordValidasi('post')
+        // setStatusValidasi({ value: 3, label: "Belum divalidasi" });
+        // setCatatan(" ");
+    } else {
+        // setValidasiId = results.data.data.id
+        // console.log(setValidasiId)
+        setValidasiId(results.data.data.id)
+        setStatusRecordValidasi('patch')
         setStatusValidasi({
-          value: results.data.data.status_validasi.id,
-          label: results.data.data.status_validasi.nama,
+            value: results.data.data.status_validasi.id,
+            label: results.data.data.status_validasi.nama,
         });
         setCatatan(results.data.data.catatan);
-        // if (kategoriUser === 3) {
-        //   setButtonStatus(false);
-        // }
         setStatusDataValidasi(results.data.data.id);
-      }
+    }
     } catch (error) {
       console.log(error);
     }
@@ -405,7 +467,7 @@ const RL33 = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h5 className="card-title h5">Validasi RL 3.3</h5>
+              <h5 className="card-title h5">Validasi RL 3.3 Gigi dan Mulut</h5>
               <form onSubmit={Validasi}>
                 <Select
                   options={optionStatusValidasi}
@@ -462,7 +524,7 @@ const RL33 = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h5 className="card-title h5">Filter RL 3.3</h5>
+              <h5 className="card-title h5">Filter RL 3.3 Gigi dan Mulut</h5>
               <form onSubmit={Cari}>
                 <div className="col-md-12">
                   <div className="row">

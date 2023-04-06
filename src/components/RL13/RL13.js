@@ -103,8 +103,8 @@ const RL13 = () => {
             const response = await axios.get("/apisirs/statusvalidasi");
             const results = response.data.data.map((value, index) => {
                 return {
-                    value: value.id,
-                    label: value.nama,
+                    key: value.nama,
+                    value: value.id
                 };
             });
             setOptionsStatusValidasi([{ key: "Belum divalidasi", value: "" }, ...results]);
@@ -179,7 +179,7 @@ const RL13 = () => {
                     "/apisirs/validasi",
                     {
                         rsId: idrs,
-                        rlId: 1,
+                        rlId: 27,
                         tahun: date,
                         statusValidasiId: statusValidasiId,
                         catatan: catatan,

@@ -44,6 +44,8 @@ const RL310 = () => {
     const [kategoriUser, setKategoriUser] = useState(3)
     const [namaTahun, setNamaTahun] = useState(new Date().getFullYear() - 1);
     const [namakabkotaView, setKabKotaView] = useState("");
+    const [statusRecordValidasi, setStatusRecordValidasi] = useState("post");
+    const [validasiId, setValidasiId] = useState(null)
 
 
     useEffect(() => {
@@ -291,8 +293,75 @@ const RL310 = () => {
         setSpinner(true);
         let date = tahun + "-01-01";
 
+        if (statusRecordValidasi == 'post') {
+          try {
+            const customConfig = {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            };
+            const result = await axiosJWT.post(
+              "/apisirs/validasi",
+              {
+                rsId: idrs,
+                rlId: 10,
+                tahun: date,
+                statusValidasiId: statusValidasiId,
+                catatan: catatan,
+              },
+              customConfig
+            );
+            setStatusRecordValidasi('patch')
+            setSpinner(false);
+            toast("Data Berhasil Disimpan", {
+              position: toast.POSITION.TOP_RIGHT,
+            });
+            setValidasiId(result.data.data.id)
+            setStatusRecordValidasi('patch')
+          } catch (error) {
+            toast(
+              `Data tidak bisa disimpan karena ,${error.response.data.message}`,
+              {
+                position: toast.POSITION.TOP_RIGHT,
+              }
+            );
+            setSpinner(false);
+          }  
+        } else if (statusRecordValidasi == 'patch') {
+            try {
+            const customConfig = {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            };
+            await axiosJWT.patch(
+              "/apisirs/validasi/" + validasiId,
+              {
+                statusValidasiId: statusValidasiId,
+                catatan: catatan,
+              },
+              customConfig
+            );
+            setSpinner(false);
+            toast("data berhasil diubah", {
+              position: toast.POSITION.TOP_RIGHT,
+            });
+          } catch (error) {
+            console.log(error);
+            toast("Data Gagal Diupdate", {
+              position: toast.POSITION.TOP_RIGHT,
+            });
+            setButtonStatus(false);
+            setSpinner(false);
+          }
+        }
+    
+
         // getDataStatusValidasi()
 
+        /*
         if (statusValidasiId == 3) {
             alert("Silahkan pilih status validasi terlebih dahulu");
             setSpinner(false);
@@ -395,6 +464,7 @@ const RL310 = () => {
                 getDataStatusValidasi();
             }
         }
+        */
     };
 
     const getDataStatusValidasi = async () => {
@@ -422,6 +492,7 @@ const RL310 = () => {
                 setButtonStatus(false);
                 // setStatusDataValidasi()
                 setStatusValidasi({ value: 3, label: "Belum divalidasi" });
+                setStatusRecordValidasi('post')
             } else {
                 setStatusValidasi({
                     value: results.data.data.status_validasi.id,
@@ -431,6 +502,8 @@ const RL310 = () => {
                 setButtonStatus(false);
                 setStatusDataValidasi(results.data.data.id);
                 // alert('hi')
+                setValidasiId(results.data.data.id)
+                setStatusRecordValidasi('patch')
             }
             // console.log(results)
         } catch (error) {
@@ -473,7 +546,10 @@ const RL310 = () => {
                         datarlTigaTitikSepuluhDetails.push(value)
                     })
                 })
-
+                if (!results.data.data.length) {
+                    changeValidateAccessEmpty()
+                }
+                
                 setDataRL(datarlTigaTitikSepuluhDetails);
                 setNamaFile("RL310_" + idrs);
                 setSpinner(false);
