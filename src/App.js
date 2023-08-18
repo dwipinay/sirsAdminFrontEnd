@@ -12,7 +12,7 @@ import RL12 from "./components/RL12/RL12.js"
 import RL13 from "./components/RL13/RL13.js"
 
 // RL 3.1
-import RL31 from "./components/RL31/RL31.js"
+import RL31 from "./components/RL31/RL31"
 
 // RL 3.2
 import RL32 from "./components/RL32/RL32.js"
@@ -93,7 +93,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login/>} />
         <Route path="/beranda" element={<><NavigationBar/></>} />
-        <Route path="/user/ubahpassword" element={<><NavigationBar/><FormUbahPassword/></>}/>
+        <Route path="/ubahpassword" element={<><NavigationBar/><FormUbahPassword/></>}/>
         <Route path="/rl12" element={<><NavigationBar/><RL12/></>}/>
         <Route path="/rl32" element={<><NavigationBar/><RL32/></>}/>
         <Route path="/rl33" element={<><NavigationBar/><RL33/></>}/>
@@ -127,8 +127,18 @@ function App() {
 
         <Route path="/rl4bsebab" element={<><NavigationBar/><RL4BSebab/></>}/>
 
+        <Route path="*" element={<PageNotFound />} status={404}/>
       </Routes>
     </BrowserRouter>
+  );
+}
+
+function PageNotFound() {
+  return (
+    <div className="container mt-3">
+      <h3>404 page not found</h3>
+      <p>We are sorry but the page you are looking for does not exist.</p>
+    </div>
   );
 }
 
