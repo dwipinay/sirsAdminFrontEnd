@@ -27,6 +27,7 @@ const RL51 = () => {
     const [spinner, setSpinner] = useState(false);
     const [options, setOptions] = useState([]);
     const [optionsrs, setOptionsRS] = useState([]);
+    const [optionsprov, setOptionsProv] = useState([]);
     const [idkabkota, setIdKabKota] = useState("");
     const [idrs, setIdRS] = useState("");
     const tableRef = useRef(null);
@@ -50,6 +51,7 @@ const RL51 = () => {
         refreshToken();
         getDataKabkota();
         getStatusValidasi()
+        getDataProvinsi()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -84,6 +86,71 @@ const RL51 = () => {
         return Promise.reject(error);
         }
     );
+
+    const getDataProvinsi = async () => {
+        setOptions([]);
+        setOptionsRS([]);
+        changeValidateAccessEmpty()
+        setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
+        setCatatan(' ')
+        try {
+            const response = await axiosJWT.get("/apisirs/provinsi");
+            const provinsiDetails = response.data.data.map((value) => {
+                return value;
+            });
+
+            const results = [];
+            provinsiDetails.forEach((value) => {
+                results.push({
+                key: value.nama,
+                value: value.id,
+                });
+            });
+            // Update the options state
+            setOptionsProv([{ key: "Piih Provinsi", value: "" }, ...results]);
+            } catch (error) {
+            if (error.response) {
+                navigate("/");
+            }
+        }
+    };
+
+    const getDataKabkotaByProv = async (e) => {
+        setOptions([]);
+        setOptionsRS([]);
+        changeValidateAccessEmpty()
+        setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
+        setCatatan(' ')
+        if (e.target.value.length > 0) {
+            try {
+                const response = await axiosJWT.get("/apisirs/kabkota", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    params: {
+                        provid: e.target.value
+                    }
+                    });
+                const kabkotaDetails = response.data.data.map((value) => {
+                    return value;
+                });
+
+                const results = [];
+                kabkotaDetails.forEach((value) => {
+                    results.push({
+                    key: value.nama,
+                    value: value.id,
+                    });
+                });
+                // Update the options state
+                setOptions([{ key: "Piih Kab/Kota", value: "" }, ...results]);
+            } catch (error) {
+                if (error.response) {
+                    navigate("/");
+                }
+            }
+        }
+    };
 
     const getDataKabkota = async () => {
         try {
@@ -126,42 +193,44 @@ const RL51 = () => {
     }
 
     const searchRS = async (e) => {
-        try {
-            const responseRS = await axiosJWT.get(
-                "/apisirs/rumahsakit/",
-                {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                params: {
-                    kabkotaid: e.target.value
-                }
-                }
-            );
-        const DetailRS = responseRS.data.data.map((value) => {
-            return value;
-        });
-        const resultsRS = [];
-
-        DetailRS.forEach((value) => {
-            resultsRS.push({
-            key: value.RUMAH_SAKIT,
-            value: value.Propinsi,
-            });
-        });
-        // // Update the options state
-        setIdKabKota(e.target.value);
-        setOptionsRS([...resultsRS]);
-        setKabKota(e.target.options[e.target.selectedIndex].text);
-        } catch (error) {
-        if (error.response) {
-            console.log(error);
-        }
-        }
-
+        setOptionsRS([]);
         changeValidateAccessEmpty()
         setStatusValidasi({ value: 3, label: 'Belum divalidasi' })
         setCatatan(' ')
+        if (e.target.value.length > 0) {
+            try {
+                const responseRS = await axiosJWT.get(
+                    "/apisirs/rumahsakit/",
+                    {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    params: {
+                        kabkotaid: e.target.value
+                    }
+                    }
+                );
+            const DetailRS = responseRS.data.data.map((value) => {
+                return value;
+            });
+            const resultsRS = [];
+
+            DetailRS.forEach((value) => {
+                resultsRS.push({
+                key: value.RUMAH_SAKIT,
+                value: value.Propinsi,
+                });
+            });
+            // // Update the options state
+            setIdKabKota(e.target.value);
+            setOptionsRS([...resultsRS]);
+            setKabKota(e.target.options[e.target.selectedIndex].text);
+            } catch (error) {
+            if (error.response) {
+                console.log(error);
+            }
+            }
+        }
     };
 
     const changeHandlerSingle = (event) => {
@@ -564,6 +633,36 @@ const RL51 = () => {
                     <h5 className="card-title h5">
                     Filter RL 5.1
                     </h5>
+
+                    {kategoriUser == 5 &&
+                    <div
+                    className="form-floating"
+                    style={{ width: "100%", display: "inline-block" }}
+                    >
+                    <select
+                        name="provinsi"
+                        typeof="select"
+                        className="form-control"
+                        id="floatingselect"
+                        placeholder="Provinsi"
+                        onChange={getDataKabkotaByProv}
+                    >
+                        {optionsprov.map((option) => {
+                        return (
+                            <option
+                            key={option.value}
+                            name={option.key}
+                            value={option.value}
+                            >
+                            {option.key}
+                            </option>
+                        );
+                        })}
+                    </select>
+                    <label htmlFor="floatingInput">Provinsi :</label>
+                    </div>
+                    }
+
                     <div
                     className="form-floating"
                     style={{ width: "100%", display: "inline-block" }}

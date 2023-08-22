@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Container from 'react-bootstrap/Container'
 import Nav from 'react-bootstrap/Nav'
 import Navbar from 'react-bootstrap/Navbar'
@@ -6,12 +6,26 @@ import NavDropdown  from 'react-bootstrap/NavDropdown'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
 import logoImage from '../Images/sirsIcon.png'
+import jwt_decode from "jwt-decode";
 
 const NavigationBar = () => {
     const navigate = useNavigate()
+    const [kategoriUser, setKategoriUser] = useState(3)
     useEffect(() => {
         document.title = "SIRS Online Versi 6"
+        refreshToken();
     },[])
+    const refreshToken = async () => {
+        try {
+        const response = await axios.get("/apisirs/token");
+        const decoded = jwt_decode(response.data.accessToken)
+        setKategoriUser(decoded.jenis_user_id);
+        } catch (error) {
+        if (error.response) {
+            navigate("/");
+        }
+        }
+    };
     const Logout = async() => {
         try {
             await axios.delete('/apisirs/logoutadmin')
@@ -38,6 +52,7 @@ const NavigationBar = () => {
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="me-auto">
                         <Nav.Link as={Link} to="/beranda">Beranda</Nav.Link>
+                        {kategoriUser != 5 &&
                         <NavDropdown title="RL.1" id="basic-nav-dropdown">
                             <NavDropdown.Item as={Link} to="/rl12">
                                 RL 1.2 Indikator Pelayanan Rumah Sakit
@@ -46,6 +61,8 @@ const NavigationBar = () => {
                                 RL 1.3 Tempat Tidur
                             </NavDropdown.Item>
                         </NavDropdown>
+                        }
+                        {kategoriUser != 5 &&
                         <NavDropdown title="RL.3" id="basic-nav-dropdown">
                             <NavDropdown.Item as={Link} to="/rl31">
                                 RL 3.1 Rawat Inap
@@ -96,6 +113,8 @@ const NavigationBar = () => {
                                 RL 3.15 Cara Bayar
                             </NavDropdown.Item>
                         </NavDropdown>
+                        }
+                        {kategoriUser != 5 &&
                         <NavDropdown title="RL.4" id="basic-nav-dropdown">
                             <NavDropdown.Item as={Link} to="/rl4a">
                                 RL 4.a Penyakit Rawat Inap
@@ -110,6 +129,7 @@ const NavigationBar = () => {
                                 RL 4.b Penyakit Rawat Jalan Sebab
                             </NavDropdown.Item>
                         </NavDropdown>
+                        }
                         <NavDropdown title="RL.5" id="basic-nav-dropdown">
                             <NavDropdown.Item as={Link} to="/rl51">
                                 RL 5.1 Pengujung Rumah Sakit
@@ -117,12 +137,16 @@ const NavigationBar = () => {
                             <NavDropdown.Item as={Link} to="/rl52">
                                 RL 5.2 Kunjungan Rawat Jalan
                             </NavDropdown.Item>
+                            {kategoriUser != 5 &&
                             <NavDropdown.Item as={Link} to="/rl53">
                                 RL 5.3 Daftar 10 Besar Penyakit Rawat Inap
                             </NavDropdown.Item>
+                            }
+                            {kategoriUser != 5 &&
                             <NavDropdown.Item as={Link} to="/rl54">
                                 RL 5.4 Daftar 10 Besar Penyakit Rawat Jalan
                             </NavDropdown.Item>
+                            }
                         </NavDropdown>
                     </Nav>
                 </Navbar.Collapse>
